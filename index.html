@@ -95,6 +95,15 @@ button{font:inherit;border:0;border-radius:12px;padding:12px 14px;font-weight:75
   body:has(#opponentWrap.active) .piece { min-height:42px; }
 }
 
+
+body.theme-forest{--bg:#10251e;--panel:#1b3a2d;--cell:#285241;--text:#f0fff5;--muted:#b1d8bf;--accent:#8af0b0;background:radial-gradient(circle at top,#285a43,#10251e 65%)}
+body.theme-sunset{--bg:#2a1630;--panel:#45264b;--cell:#58324f;--text:#fff4f7;--muted:#e6bfd0;--accent:#ffb36b;background:radial-gradient(circle at top,#77405b,#24152c 70%)}
+body.theme-light{--bg:#e8efff;--panel:#fff;--cell:#d1dcf3;--text:#17213a;--muted:#52617d;--accent:#3975b6;background:radial-gradient(circle at top,#fff,#dce6fb 70%)}
+body.theme-light .stat,body.theme-light .piece{background:linear-gradient(180deg,#fff,#edf2ff);border-color:#b9c8e5}
+body.theme-light .board-wrap{background:#e2eaf9;border-color:#b9c8e5}
+body.theme-light .modal{background:linear-gradient(160deg,#fff,#e7edfa);border-color:#b9c8e5}
+body.theme-light .modal p,body.theme-light label{color:#394966!important}
+body.theme-light .secondary{background:#d7e2f7;color:#17213a;border-color:#b9c8e5}
 </style>
 </head>
 <body>
@@ -124,9 +133,30 @@ button{font:inherit;border:0;border-radius:12px;padding:12px 14px;font-weight:75
 <p>Розміщуй блоки, очищуй лінії та збирай комбо. Перетягуй фігури пальцем або мишкою!</p>
 <button class="primary" id="playBtn">▶ СТАРТ</button>
 <button class="secondary" id="multiplayerBtn">👥 Грати з другом онлайн</button>
+<button class="secondary" id="profileBtn">⚙️ Налаштування профілю</button>
 <button class="secondary" id="statsBtn">📊 Моя статистика</button>
 <button class="secondary" id="menuRulesBtn">❔ Як грати</button>
 </div>
+</div>
+
+
+<div class="overlay hidden" id="settingsMenu">
+  <div class="modal">
+    <h2>⚙️ Налаштування</h2>
+    <p>Налаштуй ім’я, мову та вигляд гри.</p>
+    <label for="playerNameInput" style="display:block;text-align:left;font-size:13px;color:#c5d1ed;margin-top:10px">Ім’я гравця</label>
+    <input id="playerNameInput" maxlength="20" autocomplete="nickname" placeholder="Введи ім’я" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid #40527a;background:#111b31;color:#f4f7ff;font:inherit">
+    <label for="languageSelect" style="display:block;text-align:left;font-size:13px;color:#c5d1ed;margin-top:12px">Мова / Language / Sprache</label>
+    <select id="languageSelect" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid #40527a;background:#111b31;color:#f4f7ff;font:inherit">
+      <option value="uk">🇺🇦 Українська</option><option value="de">🇩🇪 Deutsch</option><option value="en">🇬🇧 English</option>
+    </select>
+    <label for="themeSelect" style="display:block;text-align:left;font-size:13px;color:#c5d1ed;margin-top:12px">Тема</label>
+    <select id="themeSelect" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid #40527a;background:#111b31;color:#f4f7ff;font:inherit">
+      <option value="night">🌌 Нічна</option><option value="forest">🌲 Лісова</option><option value="sunset">🌅 Захід сонця</option><option value="light">☀️ Світла</option>
+    </select>
+    <button class="primary" id="saveSettingsBtn">💾 Зберегти</button>
+    <button class="secondary" id="settingsBackBtn">← Назад у меню</button>
+  </div>
 </div>
 
 <div class="overlay hidden" id="statsMenu">
@@ -138,7 +168,8 @@ button{font:inherit;border:0;border-radius:12px;padding:12px 14px;font-weight:75
 <div class="panel-stat"><span>Максимальне комбо</span><strong id="maxCombo">x0</strong></div>
 <div class="panel-stat"><span>Загальний час гри</span><strong id="totalTime">0 хв</strong></div>
 </div>
-<div class="leaderboard"><h3>🏆 Таблиця рекордів</h3><div id="leaderRows"></div></div>
+<div class="leaderboard"><h3>🏆 Мої рекорди</h3><div id="leaderRows"></div></div>
+<div class="leaderboard"><h3>🌍 Глобальний рейтинг</h3><div id="globalLeaderRows">Натисни, щоб завантажити онлайн-рейтинг.</div><button class="secondary" id="refreshGlobalBtn">🔄 Оновити глобальний рейтинг</button></div>
 <div class="hint">Рекорди зберігаються на цьому пристрої в браузері.</div>
 <button class="primary" id="statsBack">← Назад у меню</button>
 <button class="secondary" id="resetStats">Скинути статистику</button>
@@ -171,272 +202,38 @@ const shapes=[[[0,0]],[[0,0],[0,1]],[[0,0],[1,0]],[[0,0],[0,1],[1,0],[1,1]],[[0,
 let grid=[],score=0,combo=0,maxComboThisGame=0,pieces=[],selected=-1,running=false,sound=true,audioCtx=null,drag=null,previewCells=[],gameStart=0,clockInterval=null;
 const loadData=()=>{try{return JSON.parse(localStorage.getItem('bbDeluxeStats')||'{}')}catch(e){return {}}};
 let data=Object.assign({games:0,best:0,maxCombo:0,totalSeconds:0,leaderboard:[]},loadData());
+const profile = {
+  get name(){ return localStorage.getItem('bbPlayerName') || ''; },
+  get language(){ return localStorage.getItem('bbLanguage') || 'uk'; },
+  get theme(){ return localStorage.getItem('bbTheme') || 'night'; }
+};
+window.ComboGame = {
+  getState: () => ({score, grid: grid.map(row => row.slice()), name: profile.name || 'Гравець'}),
+  getProfile: () => ({name: profile.name || 'Гравець', language: profile.language, theme: profile.theme}),
+  submitScore: (finalScore) => window.dispatchEvent(new CustomEvent('combo-score-submitted',{detail:{score:finalScore,name:profile.name||'Гравець'}}))
+};
+function saveCurrentGame(){
+  try{localStorage.setItem('bbCurrentGame',JSON.stringify({grid,score,combo,pieces,selected,running}));}catch(e){}
+}
+function restoreCurrentGame(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('bbCurrentGame')||'null');
+    if(saved && saved.running && Array.isArray(saved.grid) && saved.grid.length===N && Array.isArray(saved.pieces)){
+      grid=saved.grid;score=Number(saved.score)||0;combo=Number(saved.combo)||0;pieces=saved.pieces;selected=Number.isInteger(saved.selected)?saved.selected:-1;running=true;
+      updateStats();drawBoard();drawPieces();hideAll();startClock();toastEl.textContent='Прогрес відновлено!';
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
 data.leaderboard=Array.isArray(data.leaderboard)?data.leaderboard:[];
 function saveData(){try{localStorage.setItem('bbDeluxeStats',JSON.stringify(data))}catch(e){}}
 function pulseDevice(lines, combo){try{if(navigator.vibrate){navigator.vibrate(combo>1?[45,35,65]:lines>1?[70,30,70]:35)}}catch(e){}}
 function showClearEffect(lines, combo){const wrap=document.querySelector('.board-wrap');wrap.classList.remove('fx');toastEl.classList.remove('fx');void wrap.offsetWidth;wrap.classList.add('fx');toastEl.classList.add('fx');pulseDevice(lines,combo);setTimeout(()=>{wrap.classList.remove('fx');toastEl.classList.remove('fx')},500)}
 function beep(freq=520,duration=.07){if(!sound)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;o.type='sine';g.gain.value=.04;o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.stop(audioCtx.currentTime+duration)}catch(e){}}
-function hideAll(){[mainMenu,statsMenu,rulesMenu,gameOver].forEach(x=>x.classList.add('hidden'))}
+function hideAll(){[mainMenu,statsMenu,rulesMenu,gameOver,document.getElementById('settingsMenu')].forEach(x=>x.classList.add('hidden'))}
 function showMenu(){running=false;endClock();hideAll();mainMenu.classList.remove('hidden');clearPreview();drag=null}
 function makeBoard(){boardEl.innerHTML='';for(let r=0;r<N;r++)for(let c=0;c<N;c++){let el=document.createElement('div');el.className='cell';el.dataset.r=r;el.dataset.c=c;el.addEventListener('click',()=>{if(!drag)placeAt(r,c)});boardEl.appendChild(el)}}
 function randomPiece(){let shape=shapes[Math.floor(Math.random()*shapes.length)].map(p=>p.slice()),h=Math.max(...shape.map(p=>p[0]))+1,w=Math.max(...shape.map(p=>p[1]))+1;return {shape,color:colors[Math.floor(Math.random()*colors.length)],h,w,used:false}}
 function drawBoard(){[...boardEl.children].forEach(el=>{let r=+el.dataset.r,c=+el.dataset.c;el.classList.toggle('filled',!!grid[r][c]);el.style.setProperty('--c',grid[r][c]||'');el.classList.remove('preview','preview-invalid')})}
-function drawPieces(){piecesEl.innerHTML='';pieces.forEach((p,i)=>{let box=document.createElement('div');box.className='piece'+(i===selected?' selected':'')+(p.used?' used':'')+(drag&&drag.index===i?' dragging':'');box.setAttribute('role','button');box.setAttribute('aria-label','Фігура '+(i+1));if(!p.used){let mini=document.createElement('div');mini.className='mini';mini.style.gridTemplateColumns=`repeat(${p.w},auto)`;for(let r=0;r<p.h;r++)for(let c=0;c<p.w;c++){let mc=document.createElement('div');mc.className='mini-cell'+(p.shape.some(([a,b])=>a===r&&b===c)?'':' empty');mc.style.setProperty('--c',p.color);mini.appendChild(mc)}box.appendChild(mini)}
-box.addEventListener('pointerdown',e=>beginDrag(e,i));box.addEventListener('click',()=>{if(!running||p.used||drag)return;selected=i;drawPieces();toastEl.textContent='Перетягни фігуру або вибери місце на полі';beep(420)});piecesEl.appendChild(box)})}
-function canPlace(p,r,c){return p.shape.every(([a,b])=>r+a<N&&c+b<N&&r+a>=0&&c+b>=0&&!grid[r+a][c+b])}
-function clearHighlights(){previewCells.forEach(el=>el.classList.remove('preview','preview-invalid'));previewCells=[]}
-function clearPreview(){clearHighlights();let g=document.querySelector('.drag-ghost');if(g)g.remove()}
-function cellAtPoint(x,y){let el=document.elementFromPoint(x,y);return el&&el.classList.contains('cell')?el:null}
-function showPreview(p,r,c){clearHighlights();let valid=canPlace(p,r,c);p.shape.forEach(([a,b])=>{let rr=r+a,cc=c+b;if(rr>=0&&rr<N&&cc>=0&&cc<N){let el=boardEl.children[rr*N+cc];el.classList.add(valid?'preview':'preview-invalid');previewCells.push(el)}});return valid}
-function updateDrag(e){if(!drag)return;let x=e.clientX,y=e.clientY;drag.lastX=x;drag.lastY=y;const firstCell=boardEl.children[0];const cellSize=firstCell?firstCell.getBoundingClientRect().width:40;const offsetX=cellSize*1.15;const lift=cellSize*1.65;const previewX=x-offsetX;const previewY=y-lift;let cell=cellAtPoint(previewX,previewY);if(cell){let r=+cell.dataset.r,c=+cell.dataset.c;drag.target={r,c};showPreview(pieces[drag.index],r,c)}else{drag.target=null;clearHighlights()}if(drag.ghost){drag.ghost.style.left=x+'px';drag.ghost.style.top=(y-cellSize*0.8)+'px'}}
-function beginDrag(e,i){if(!running||pieces[i].used)return;e.preventDefault();selected=i;let p=pieces[i];drag={index:i,target:null,lastX:e.clientX,lastY:e.clientY,ghost:null};let ghost=document.createElement('div');ghost.className='drag-ghost';ghost.style.gridTemplateColumns=`repeat(${p.w},auto)`;for(let r=0;r<p.h;r++)for(let c=0;c<p.w;c++){let cell=document.createElement('div');cell.className='ghost-cell';if(p.shape.some(([a,b])=>a===r&&b===c)){cell.style.background=p.color;cell.style.visibility='visible'}else{cell.style.visibility='hidden'}ghost.appendChild(cell)}document.body.appendChild(ghost);drag.ghost=ghost;updateDrag(e);drawPieces();window.addEventListener('pointermove',onPointerMove,{passive:false});window.addEventListener('pointerup',onPointerUp,{once:true});window.addEventListener('pointercancel',onPointerUp,{once:true});}
-function onPointerMove(e){if(!drag)return;e.preventDefault();updateDrag(e)}
-function onPointerUp(e){if(!drag)return;updateDrag(e);let d=drag;let p=pieces[d.index];clearPreview();if(d.target&&canPlace(p,d.target.r,d.target.c)){selected=d.index;drag=null;placeAt(d.target.r,d.target.c)}else{drag=null;drawPieces()}window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointercancel',onPointerUp)}
-function placeAt(r,c){if(!running||selected<0||!pieces[selected]||pieces[selected].used)return;let p=pieces[selected];if(!canPlace(p,r,c)){toastEl.textContent='Тут фігура не поміщається!';beep(170);return}p.shape.forEach(([a,b])=>grid[r+a][c+b]=p.color);score+=p.shape.length;let rows=[],cols=[];for(let rr=0;rr<N;rr++)if(grid[rr].every(Boolean))rows.push(rr);for(let cc=0;cc<N;cc++)if(grid.every(row=>row[cc]))cols.push(cc);let cleared=new Set();rows.forEach(rr=>{for(let cc=0;cc<N;cc++)cleared.add(rr*N+cc)});cols.forEach(cc=>{for(let rr=0;rr<N;rr++)cleared.add(rr*N+cc)});if(cleared.size){combo++;maxComboThisGame=Math.max(maxComboThisGame,combo);data.maxCombo=Math.max(data.maxCombo,combo);let lines=rows.length+cols.length;score+=cleared.size*2+lines*10+Math.max(0,combo-1)*15;cleared.forEach(i=>grid[Math.floor(i/N)][i%N]=null);toastEl.textContent=(lines>1?'💥 '+lines+' ЛІНІЇ! ':'✨ ЛІНІЮ ОЧИЩЕНО! ')+(combo>1?'КОМБО x'+combo:'');beep(700+lines*100,.14);showClearEffect(lines,combo)}else{combo=0;toastEl.textContent='Гарний хід!';beep(520)}p.used=true;selected=-1;updateStats();drawBoard();// Multiplayer state is managed by the separate multiplayer module.
-try {
-  if (typeof roomRef !== 'undefined' && typeof uid !== 'undefined' && roomRef && uid) {
-    roomRef.child('players/' + uid).update({
-      score: score,
-      grid: grid,
-      updatedAt: firebase.database.ServerValue.TIMESTAMP
-    }).catch(() => {});
-  }
-} catch (e) {
-  // Keep single-player gameplay running even when multiplayer is not initialized.
-}if (pieces.length === 3 && pieces.every(piece => piece.used)) {
-  // All three pieces have been placed: immediately deal a fresh set.
-  pieces = [randomPiece(), randomPiece(), randomPiece()];
-  selected = -1;
-  drawPieces();
-  saveData();
-  if (!hasMoves()) setTimeout(finishGame, 250);
-  return;
-}
-drawPieces();
-saveData();
-if (!hasMoves()) setTimeout(finishGame, 250);}
-function hasMoves(){return pieces.some(p=>!p.used&&Array.from({length:N},(_,r)=>Array.from({length:N},(_,c)=>canPlace(p,r,c))).some(row=>row.some(Boolean)))}
-function updateStats(){scoreEl.textContent=score;comboEl.textContent='x'+combo;bestEl.textContent=Math.max(data.best,score)}
-function startClock(){gameStart=Date.now();if(clockInterval)clearInterval(clockInterval);clockInterval=setInterval(()=>{},1000)}
-function endClock(){if(clockInterval){clearInterval(clockInterval);clockInterval=null}if(gameStart){data.totalSeconds+=Math.floor((Date.now()-gameStart)/1000);gameStart=0;saveData()}}
-function startGame(){grid=Array.from({length:N},()=>Array(N).fill(null));score=0;combo=0;maxComboThisGame=0;selected=-1;running=true;pieces=[randomPiece(),randomPiece(),randomPiece()];updateStats();drawBoard();drawPieces();toastEl.textContent='Успіхів!';hideAll();startClock()}
-function finishGame(){if(!running)return;running=false;endClock();data.games++;data.best=Math.max(data.best,score);data.maxCombo=Math.max(data.maxCombo,maxComboThisGame);data.leaderboard.push({score,date:new Date().toLocaleDateString('uk-UA')});data.leaderboard.sort((a,b)=>b.score-a.score);data.leaderboard=data.leaderboard.slice(0,10);saveData();document.getElementById('gameOverText').textContent=`Твій рахунок: ${score}. Максимальне комбо: x${maxComboThisGame}. Рекорд: ${data.best}.`;hideAll();gameOver.classList.remove('hidden')}
-function fmtTime(sec){let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;if(h)return h+' год '+m+' хв';if(m)return m+' хв '+s+' с';return s+' с'}
-function renderStats(){document.getElementById('gamesPlayed').textContent=data.games;document.getElementById('statsBest').textContent=data.best;document.getElementById('maxCombo').textContent='x'+data.maxCombo;document.getElementById('totalTime').textContent=fmtTime(data.totalSeconds);let el=document.getElementById('leaderRows');el.innerHTML='';if(!data.leaderboard.length){el.innerHTML='<div class="leader-row"><span>Поки немає рекордів</span><b>—</b></div>'}else data.leaderboard.forEach((x,i)=>{let row=document.createElement('div');row.className='leader-row';let left=document.createElement('span');left.textContent=(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.')+' '+x.date;let right=document.createElement('b');right.textContent=x.score+' оч.';row.append(left,right);el.appendChild(row)})}
-makeBoard();grid=Array.from({length:N},()=>Array(N).fill(null));drawBoard();pieces=[randomPiece(),randomPiece(),randomPiece()];drawPieces();updateStats();
-document.getElementById('playBtn').addEventListener('click',startGame);
-document.getElementById('statsBtn').addEventListener('click',()=>{renderStats();hideAll();statsMenu.classList.remove('hidden')});
-document.getElementById('statsBack').addEventListener('click',()=>{hideAll();mainMenu.classList.remove('hidden')});
-document.getElementById('menuRulesBtn').addEventListener('click',()=>{hideAll();rulesMenu.classList.remove('hidden')});
-document.getElementById('rulesBack').addEventListener('click',()=>{hideAll();mainMenu.classList.remove('hidden')});
-document.getElementById('menuBtn').addEventListener('click',showMenu);
-document.getElementById('againBtn').addEventListener('click',startGame);
-document.getElementById('overMenuBtn').addEventListener('click',showMenu);
-document.getElementById('soundBtn').addEventListener('click',()=>{sound=!sound;document.getElementById('soundBtn').textContent='🔊 Звук: '+(sound?'ВКЛ':'ВИКЛ');if(sound)beep()});
-document.getElementById('resetStats').addEventListener('click',()=>{if(confirm('Точно скинути всю статистику та рекорди?')){data={games:0,best:0,maxCombo:0,totalSeconds:0,leaderboard:[]};saveData();renderStats();updateStats()}});
-})();
-</script>
-
-
-<!-- Multiplayer room UI -->
-<div class="overlay hidden" id="multiMenu">
-  <div class="modal">
-    <h2>👥 Грати з другом</h2>
-    <p>Створи кімнату та надішли посилання другу або введи код його кімнати.</p>
-    <button class="primary" id="createRoomBtn">➕ Створити кімнату</button>
-    <input id="roomCodeInput" aria-label="Код кімнати" placeholder="Код кімнати" autocomplete="off" style="width:100%;margin-top:12px;padding:12px;border-radius:10px;border:1px solid #40527a;background:#111b31;color:#f4f7ff;text-transform:uppercase;font:inherit">
-    <button class="secondary" id="joinRoomBtn">🔑 Приєднатися за кодом</button>
-    <div id="onlineBar" class="leaderboard hidden">
-      <h3 id="onlineRoomLabel">Кімната</h3>
-      <div id="onlineScores">Очікуємо друга…</div>
-      <div id="roomPlayers" style="margin-top:8px"></div>
-      <button class="primary hidden" id="shareRoomBtn">🔗 Поділитися посиланням</button>
-      <button class="secondary hidden" id="leaveRoomBtn">🚪 Вийти з лобі</button>
-    </div>
-    <p id="multiStatus" role="status" aria-live="polite" style="overflow-wrap:anywhere">Підключення ще не виконано.</p>
-    <button class="secondary" id="multiBackBtn">← Назад у меню</button>
-    <div class="hint">Для онлайн-гри обом гравцям потрібне інтернет-з’єднання.</div>
-  </div>
-</div>
-
-<!-- Firebase SDK: multiplayer room + live scores -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script>
-(() => {
-  const firebaseConfig = {
-    apiKey: "AIzaSyCPIPJWII-ULnz6x8mH4Rty5Q4wSDAP2Hc",
-    authDomain: "combo-2c095.firebaseapp.com",
-    databaseURL: "https://combo-2c095-default-rtdb.firebaseio.com",
-    projectId: "combo-2c095",
-    appId: "1:1043725160251:web:d8b9c8d2010e362eb2711e"
-  };
-
-  const $ = id => document.getElementById(id);
-  const modal = $('multiMenu');
-  const status = $('multiStatus');
-  const codeInput = $('roomCodeInput');
-  const createBtn = $('createRoomBtn');
-  const joinBtn = $('joinRoomBtn');
-  const shareBtn = $('shareRoomBtn');
-  const playersEl = $('roomPlayers');
-  const onlineBar = $('onlineBar');
-  let db = null, uid = null, roomCode = null, roomRef = null, scoreTimer = null;
-  let lastScore = -1;
-  let lastBoard = "";
-
-  function setStatus(text) { status.textContent = text; }
-  function makeCode() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
-  function configReady() {
-    return !!firebaseConfig.apiKey && !!firebaseConfig.projectId &&
-      !!firebaseConfig.databaseURL && !!firebaseConfig.appId;
-  }
-  async function initFirebase() {
-    if (!configReady()) {
-      setStatus('Спочатку встав firebaseConfig з Firebase Console у код гри. Шукай PASTE_API_KEY_HERE.');
-      return false;
-    }
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      await firebase.auth().signInAnonymously();
-      uid = firebase.auth().currentUser.uid;
-      db = firebase.database();
-      return true;
-    } catch (e) {
-      setStatus('Не вдалося підключитися: ' + (e.message || e) + '. Перевір Anonymous sign-in та правила бази.');
-      return false;
-    }
-  }
-  function cleanOldRoomListener() {
-    if (roomRef) roomRef.off();
-    roomRef = null;
-    roomCode = null;
-    if (scoreTimer) clearInterval(scoreTimer);
-    scoreTimer = null;
-    lastBoard = "";
-  }
-  function showRoom(code) {
-    roomCode = code;
-    roomRef = db.ref('rooms/' + code);
-    $('onlineRoomLabel').textContent = 'Кімната ' + code;
-    onlineBar.classList.remove('hidden');
-    shareBtn.classList.remove('hidden');
-    $('leaveRoomBtn').classList.remove('hidden');
-    $('bottomLeaveRoomBtn').classList.add('visible');
-    $('opponentWrap').classList.add('active');
-    $('opponentBoard').innerHTML = '';
-    for (let i=0;i<64;i++){const c=document.createElement('div');c.className='opponent-cell';$('opponentBoard').appendChild(c);}
-    codeInput.value = code;
-    const url = new URL(location.href);
-    url.searchParams.set('room', code);
-    history.replaceState({}, '', url.toString());
-    roomRef.on('value', snap => {
-      const room = snap.val();
-      if (!room) {
-        setStatus('Кімнату не знайдено або її видалено.');
-        playersEl.textContent = '';
-        return;
-      }
-      const players = Object.entries(room.players || {});
-      playersEl.replaceChildren();
-      players.forEach(([id, pl]) => {
-        const row = document.createElement('div');
-        row.textContent = (id === uid ? '🟢 Ти' : '👤 Друг') + ': ' + (pl.score || 0) + ' очок';
-        playersEl.appendChild(row);
-      });
-      const opponent = players.find(([id]) => id !== uid);
-      $('onlineScores').textContent = opponent ? 'Ви обидва граєте одночасно' : 'Очікуємо друга…';
-      $('myOnlineScore').textContent = ((room.players[uid] || {}).score || 0) + ' очок';
-      $('opponentScore').textContent = opponent ? ((opponent[1].score || 0) + ' очок') : 'Очікуємо друга…';
-      const cells=[...$('opponentBoard').children];
-      const og=opponent && opponent[1].grid;
-      cells.forEach((el,i)=>{const v=og && og[Math.floor(i/8)] && og[Math.floor(i/8)][i%8];el.style.background=v || '#283656';el.style.boxShadow=v?'inset 0 -2px 0 #0003':'none';});
-      setStatus(opponent ? 'Друг приєднався! Грайте та змагайтеся за очки.' : 'Кімната готова. Надішли другу посилання!');
-    }, err => setStatus('Помилка доступу до кімнати: ' + err.message));
-    if (scoreTimer) clearInterval(scoreTimer);
-    scoreTimer = setInterval(() => {
-      const score = Number($('score').textContent || 0);
-      if (roomRef && uid) {
-        const gridNow = typeof grid !== 'undefined' ? grid : null;
-        const boardJson = JSON.stringify(gridNow);
-        if (score !== lastScore || boardJson !== lastBoard) {
-          lastScore = score; lastBoard = boardJson;
-          roomRef.child('players/' + uid).update({score:score, grid:gridNow, updatedAt:firebase.database.ServerValue.TIMESTAMP}).catch(e => setStatus('Не вдалося оновити гру: ' + e.message));
-        }
-      }
-    }, 700);
-    roomRef.child('players/' + uid).onDisconnect().remove();
-    const gridNow = typeof grid !== 'undefined' ? grid : null;
-    roomRef.child('players/' + uid).update({score:Number($('score').textContent||0),grid:gridNow}).catch(()=>{});
-  }
-  async function createRoom() {
-    if (!await initFirebase()) return;
-    cleanOldRoomListener();
-    const code = makeCode();
-    const ref = db.ref('rooms/' + code);
-    try {
-      await ref.set({ createdAt: firebase.database.ServerValue.TIMESTAMP, players: { [uid]: { score: 0, joinedAt: firebase.database.ServerValue.TIMESTAMP } } });
-      lastScore = -1;
-      showRoom(code);
-    } catch (e) { setStatus('Не вдалося створити кімнату: ' + e.message); }
-  }
-  async function joinRoom(code) {
-    code = (code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (!code) { setStatus('Введи код кімнати.'); return; }
-    if (!await initFirebase()) return;
-    cleanOldRoomListener();
-    const ref = db.ref('rooms/' + code);
-    try {
-      const snap = await ref.once('value');
-      if (!snap.exists()) { setStatus('Такої кімнати немає. Перевір код у друга.'); return; }
-      const room = snap.val();
-      const existing = Object.keys(room.players || {});
-      if (!existing.includes(uid) && existing.length >= 2) { setStatus('У кімнаті вже є 2 гравці.'); return; }
-      await ref.child('players/' + uid).set({ score: Number($('score').textContent || 0), joinedAt: firebase.database.ServerValue.TIMESTAMP });
-      lastScore = -1;
-      showRoom(code);
-    } catch (e) { setStatus('Не вдалося приєднатися: ' + e.message); }
-  }
-  $('multiplayerBtn').addEventListener('click', () => {
-    modal.classList.remove('hidden');
-    const code = new URL(location.href).searchParams.get('room');
-    if (code) codeInput.value = code.toUpperCase();
-    setStatus('Створи кімнату або введи код друга.');
-  });
-  createBtn.addEventListener('click', createRoom);
-  joinBtn.addEventListener('click', () => joinRoom(codeInput.value));
-  shareBtn.addEventListener('click', async () => {
-    if (!roomCode) return;
-    const url = new URL(location.href); url.searchParams.set('room', roomCode);
-    try {
-      if (navigator.share) await navigator.share({ title: 'Моя Block Blast кімната', text: 'Заходь грати зі мною в Block Blast!', url: url.toString() });
-      else if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(url.toString()); setStatus('Посилання скопійовано! Надішли його другу.'); }
-      else { prompt('Скопіюй посилання кімнати:', url.toString()); }
-    } catch (e) { if (e.name !== 'AbortError') setStatus('Посилання: ' + url.toString()); }
-  });
-  async function leaveRoom(){
-    const oldRef=roomRef, oldUid=uid;
-    cleanOldRoomListener();
-    if(oldRef && oldUid){try{await oldRef.child('players/'+oldUid).remove();}catch(e){}}
-    onlineBar.classList.add('hidden');shareBtn.classList.add('hidden');$('leaveRoomBtn').classList.add('hidden');$('bottomLeaveRoomBtn').classList.remove('visible');$('opponentWrap').classList.remove('active');
-    const u=new URL(location.href);u.searchParams.delete('room');history.replaceState({},'',u.toString());
-    setStatus('Ти вийшов із лобі. Можеш створити нову кімнату або повернутися в меню.');
-  }
-  $('leaveRoomBtn').addEventListener('click', leaveRoom);
-  $('bottomLeaveRoomBtn').addEventListener('click', async () => {
-    await leaveRoom();
-    modal.classList.add('hidden');
-    $('mainMenu').classList.remove('hidden');
-  });
-  $('multiBackBtn').addEventListener('click', () => { modal.classList.add('hidden'); });
-  const roomFromUrl = new URL(location.href).searchParams.get('room');
-  if (roomFromUrl) {
-    modal.classList.remove('hidden');
-    codeInput.value = roomFromUrl.toUpperCase();
-    setStatus('Тебе запросили в кімнату ' + roomFromUrl.toUpperCase() + '. Натисни «Приєднатися за кодом».');
-  }
-})();
-</script>
-</body>
-</html>
+function drawPieces(){piecesEl.innerHTML='';pieces.forEach((p,i)=>{let box=document.createElement('div');box.className='piece'+(i===selected?' selected':'')+(p.used?' used':'')+(drag&&drag.index===i?' dragging':'');box.setAttribute('role','button');box.setAttribute('aria-label','Фігура '+(i+1));if(!p.used){let mini=document.createElement('div');mini.className='mini';mini.style.gridTemplateColumns=`repeat(${p.w},auto)`;for(let r=0;r<p.h;r++)for(let c=0;c<p.w;c++){let mc=document.c
