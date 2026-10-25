@@ -376,3 +376,189 @@ if(!profile.name){setTimeout(()=>{document.getElementById('playerNameInput').val
   }
   async function initFirebase() {
     if (!configReady()) {
+      setStatus('Спочатку встав firebaseConfig з Firebase Console у код гри. Шукай PASTE_API_KEY_HERE.');
+      return false;
+    }
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      await firebase.auth().signInAnonymously();
+      uid = firebase.auth().currentUser.uid;
+      db = firebase.database();
+      return true;
+    } catch (e) {
+      setStatus('Не вдалося підключитися: ' + (e.message || e) + '. Перевір Anonymous sign-in та правила бази.');
+      return false;
+    }
+  }
+  function cleanOldRoomListener() {
+    if (roomRef) roomRef.off();
+    roomRef = null;
+    roomCode = null;
+    if (scoreTimer) clearInterval(scoreTimer);
+    scoreTimer = null;
+    lastBoard = "";
+  }
+  function showRoom(code) {
+    roomCode = code;
+    roomRef = db.ref('rooms/' + code);
+    $('onlineRoomLabel').textContent = 'Кімната ' + code;
+    onlineBar.classList.remove('hidden');
+    shareBtn.classList.remove('hidden');
+    $('leaveRoomBtn').classList.remove('hidden');
+    $('bottomLeaveRoomBtn').classList.add('visible');
+    $('opponentWrap').classList.add('active');
+    $('opponentBoard').innerHTML = '';
+    for (let i=0;i<64;i++){const c=document.createElement('div');c.className='opponent-cell';$('opponentBoard').appendChild(c);}
+    codeInput.value = code;
+    const url = new URL(location.href);
+    url.searchParams.set('room', code);
+    history.replaceState({}, '', url.toString());
+    roomRef.on('value', snap => {
+      const room = snap.val();
+      if (!room) {
+        setStatus('Кімнату не знайдено або її видалено.');
+        playersEl.textContent = '';
+        return;
+      }
+      const players = Object.entries(room.players || {});
+      playersEl.replaceChildren();
+      players.forEach(([id, pl]) => {
+        const row = document.createElement('div');
+        row.textContent = (id === uid ? '🟢 ' : '👤 ') + (pl.name || (id === uid ? playerName : 'Друг')) + ': ' + (pl.score || 0) + ' очок';
+        playersEl.appendChild(row);
+      });
+      const opponent = players.find(([id]) => id !== uid);
+      $('onlineScores').textContent = opponent ? 'Ви обидва граєте одночасно' : 'Очікуємо друга…';
+      $('myOnlineScore').textContent = ((room.players[uid] || {}).score || 0) + ' очок';
+      $('opponentScore').textContent = opponent ? ((opponent[1].score || 0) + ' очок') : 'Очікуємо друга…';
+      const cells=[...$('opponentBoard').children];
+      const og=opponent && opponent[1].grid;
+      cells.forEach((el,i)=>{const v=og && og[Math.floor(i/8)] && og[Math.floor(i/8)][i%8];el.style.background=v || '#283656';el.style.boxShadow=v?'inset 0 -2px 0 #0003':'none';});
+      setStatus(opponent ? 'Друг приєднався! Грайте та змагайтеся за очки.' : 'Кімната готова. Надішли другу посилання!');
+    }, err => setStatus('Помилка доступу до кімнати: ' + err.message));
+    if (scoreTimer) clearInterval(scoreTimer);
+    scoreTimer = setInterval(() => {
+      const gameState = window.ComboGame ? window.ComboGame.getState() : {score:Number($('score').textContent||0),grid:null,name:playerName};
+      const score = Number(gameState.score || 0);
+      if (roomRef && uid) {
+        const gridNow = gameState.grid;
+        const boardJson = JSON.stringify(gridNow);
+        if (score !== lastScore || boardJson !== lastBoard) {
+          lastScore = score; lastBoard = boardJson;
+          roomRef.child('players/' + uid).update({score:score, grid:gridNow, name:playerName, updatedAt:firebase.database.ServerValue.TIMESTAMP}).catch(e => setStatus('Не вдалося оновити гру: ' + e.message));
+        }
+      }
+    }, 700);
+    roomRef.child('players/' + uid).onDisconnect().remove();
+    const gridNow = window.ComboGame ? window.ComboGame.getState().grid : null;
+    roomRef.child('players/' + uid).update({score:Number($('score').textContent||0),grid:gridNow}).catch(()=>{});
+  }
+  async function createRoom() {
+    if (!await initFirebase()) return;
+    cleanOldRoomListener();
+    const code = makeCode();
+    const ref = db.ref('rooms/' + code);
+    try {
+      await ref.set({ createdAt: firebase.database.ServerValue.TIMESTAMP, players: { [uid]: { score: 0, name: playerName, grid:Array.from({length:8},()=>Array(8).fill(null)), joinedAt: firebase.database.ServerValue.TIMESTAMP } } });
+      lastScore = -1;
+      showRoom(code);
+    } catch (e) { setStatus('Не вдалося створити кімнату: ' + e.message); }
+  }
+  async function joinRoom(code) {
+    code = (code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!code) { setStatus('Введи код кімнати.'); return; }
+    if (!await initFirebase()) return;
+    cleanOldRoomListener();
+    const ref = db.ref('rooms/' + code);
+    try {
+      const snap = await ref.once('value');
+      if (!snap.exists()) { setStatus('Такої кімнати немає. Перевір код у друга.'); return; }
+      const room = snap.val();
+      const existing = Object.keys(room.players || {});
+      if (!existing.includes(uid) && existing.length >= 2) { setStatus('У кімнаті вже є 2 гравці.'); return; }
+      await ref.child('players/' + uid).set({ score: Number($('score').textContent || 0), name: playerName, grid:Array.from({length:8},()=>Array(8).fill(null)), joinedAt: firebase.database.ServerValue.TIMESTAMP });
+      lastScore = -1;
+      showRoom(code);
+    } catch (e) { setStatus('Не вдалося приєднатися: ' + e.message); }
+  }
+  $('multiplayerBtn').addEventListener('click', () => {
+    modal.classList.remove('hidden');
+    const code = new URL(location.href).searchParams.get('room');
+    if (code) codeInput.value = code.toUpperCase();
+    setStatus('Створи кімнату або введи код друга.');
+  });
+  createBtn.addEventListener('click', createRoom);
+  joinBtn.addEventListener('click', () => joinRoom(codeInput.value));
+  shareBtn.addEventListener('click', async () => {
+    if (!roomCode) return;
+    const url = new URL(location.href); url.searchParams.set('room', roomCode);
+    try {
+      if (navigator.share) await navigator.share({ title: 'Моя Block Blast кімната', text: 'Заходь грати зі мною в Block Blast!', url: url.toString() });
+      else if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(url.toString()); setStatus('Посилання скопійовано! Надішли його другу.'); }
+      else { prompt('Скопіюй посилання кімнати:', url.toString()); }
+    } catch (e) { if (e.name !== 'AbortError') setStatus('Посилання: ' + url.toString()); }
+  });
+  async function leaveRoom(){
+    const oldRef=roomRef, oldUid=uid;
+    cleanOldRoomListener();
+    if(oldRef && oldUid){try{await oldRef.child('players/'+oldUid).remove();}catch(e){}}
+    onlineBar.classList.add('hidden');shareBtn.classList.add('hidden');$('leaveRoomBtn').classList.add('hidden');$('bottomLeaveRoomBtn').classList.remove('visible');$('opponentWrap').classList.remove('active');
+    const u=new URL(location.href);u.searchParams.delete('room');history.replaceState({},'',u.toString());
+    setStatus('Ти вийшов із лобі. Можеш створити нову кімнату або повернутися в меню.');
+  }
+  $('leaveRoomBtn').addEventListener('click', leaveRoom);
+  $('bottomLeaveRoomBtn').addEventListener('click', async () => {
+    await leaveRoom();
+    modal.classList.add('hidden');
+    $('mainMenu').classList.remove('hidden');
+  });
+  $('multiBackBtn').addEventListener('click', () => { modal.classList.add('hidden'); });
+
+  window.addEventListener('combo-profile-updated', e => {
+    playerName = (e.detail && e.detail.name) || localStorage.getItem('bbPlayerName') || 'Гравець';
+    if(roomRef && uid) roomRef.child('players/'+uid).update({name:playerName}).catch(()=>{});
+  });
+  window.addEventListener('combo-game-updated', e => {
+    if(!roomRef || !uid || !e.detail) return;
+    roomRef.child('players/'+uid).update({score:e.detail.score,grid:e.detail.grid,name:playerName,updatedAt:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});
+  });
+  window.addEventListener('combo-show-global-leaderboard', async () => {
+    const target=$('globalLeaderRows');
+    if(!target) return;
+    target.textContent='Завантаження рейтингу…';
+    try{
+      if(!await initFirebase()){target.textContent='Онлайн-рейтинг недоступний. Перевір підключення Firebase.';return;}
+      const snap=await db.ref('globalLeaderboard').orderByChild('score').limitToLast(10).once('value');
+      const entries=Object.values(snap.val()||{}).sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0));
+      target.replaceChildren();
+      if(!entries.length){target.textContent='Поки немає онлайн-рекордів.';return;}
+      entries.forEach((entry,i)=>{
+        const row=document.createElement('div');row.className='leader-row';
+        const left=document.createElement('span');left.textContent=(i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'')+(entry.name||'Гравець');
+        const right=document.createElement('b');right.textContent=(Number(entry.score)||0)+' оч.';
+        row.append(left,right);target.appendChild(row);
+      });
+    }catch(err){target.textContent='Не вдалося завантажити рейтинг. Перевір правила Firebase.';}
+  });
+  $('refreshGlobalBtn').addEventListener('click',()=>window.dispatchEvent(new Event('combo-show-global-leaderboard')));
+  window.addEventListener('combo-score-submitted', async e => {
+    const detail=e.detail||{};
+    try {
+      if(!await initFirebase()) return;
+      const key=uid;
+      await db.ref('globalLeaderboard/'+key).transaction(old=>{
+        if(!old || Number(detail.score)>Number(old.score||0)) return {uid:key,name:detail.name||playerName,score:Number(detail.score)||0,updatedAt:firebase.database.ServerValue.TIMESTAMP};
+        return old;
+      });
+    } catch(err) { console.warn('Global leaderboard unavailable:',err); }
+  });
+  const roomFromUrl = new URL(location.href).searchParams.get('room');
+  if (roomFromUrl) {
+    modal.classList.remove('hidden');
+    codeInput.value = roomFromUrl.toUpperCase();
+    setStatus('Тебе запросили в кімнату ' + roomFromUrl.toUpperCase() + '. Натисни «Приєднатися за кодом».');
+  }
+})();
+</script>
+</body>
+</html>
