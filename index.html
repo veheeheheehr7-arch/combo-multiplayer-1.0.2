@@ -109,29 +109,278 @@ button{font:inherit;border:0;border-radius:12px;padding:12px 14px;font-weight:75
 
 
 /* Device layout: tablet landscape places the board and pieces side by side. */
-body.layout-tablet{align-items:flex-start;padding:10px;}
-body.layout-tablet .game{width:min(100%,1100px);display:grid;grid-template-columns:minmax(300px,1.05fr) minmax(280px,.95fr);grid-template-areas:"header header" "stats stats" "opponent board" "toast title" "controls pieces" "help help";gap:8px;align-items:start;}
-body.layout-tablet header{grid-area:header;margin-bottom:0}
-body.layout-tablet .stats{grid-area:stats;margin:4px 0}
-body.layout-tablet .opponent-wrap{grid-area:opponent;margin:0}
-body.layout-tablet .board-wrap{grid-area:board;width:100%;max-width:min(100%, min(66vh,620px));justify-self:center}
-body.layout-tablet .toast{grid-area:toast;margin:0}
-body.layout-tablet .pieces-title{grid-area:title;align-self:end;margin:0 0 4px}
-body.layout-tablet .pieces{grid-area:pieces;margin-top:28px;align-self:start}
-body.layout-tablet .controls{grid-area:controls;margin-top:0}
-body.layout-tablet .help{grid-area:help;margin:0}
-body.layout-tablet .piece{min-height:100px}
-body.layout-tablet .mini-cell{width:clamp(16px,2.5vw,26px);height:clamp(16px,2.5vw,26px)}
-body.layout-phone .game{width:min(100%,480px)}
-@media (orientation:landscape) and (min-width:700px){body.layout-auto{align-items:flex-start;padding:8px}body.layout-auto .game{width:min(100%,1000px);display:grid;grid-template-columns:minmax(300px,1.05fr) minmax(280px,.95fr);grid-template-areas:"header header" "stats stats" "opponent board" "toast title" "controls pieces" "help help";gap:7px;align-items:start}body.layout-auto header{grid-area:header;margin-bottom:0}body.layout-auto .stats{grid-area:stats;margin:4px 0}body.layout-auto .opponent-wrap{grid-area:opponent;margin:0}body.layout-auto .board-wrap{grid-area:board;width:100%;max-width:min(100%, min(66vh,600px));justify-self:center}body.layout-auto .toast{grid-area:toast;margin:0}body.layout-auto .pieces-title{grid-area:title;margin:0 0 4px}body.layout-auto .pieces{grid-area:pieces;margin-top:28px}body.layout-auto .controls{grid-area:controls;margin-top:0}body.layout-auto .help{grid-area:help;margin:0}body.layout-auto .piece{min-height:90px}}
-  body.theme-forest{--bg:#10251e;--panel:#1b3a2d;--cell:#285241;--text:#f0fff5;--muted:#b1d8bf;--accent:#8af0b0;background:radial-gradient(circle at top,#285a43,#10251e 65%)}
-body.theme-sunset{--bg:#2a1630;--panel:#45264b;--cell:#58324f;--text:#fff4f7;--muted:#e6bfd0;--accent:#ffb36b;background:radial-gradient(circle at top,#77405b,#24152c 70%)}
-body.theme-light{--bg:#e8efff;--panel:#fff;--cell:#d1dcf3;--text:#17213a;--muted:#52617d;--accent:#3975b6;background:radial-gradient(circle at top,#fff,#dce6fb 70%)}
-body.theme-light .stat,body.theme-light .piece{background:linear-gradient(180deg,#fff,#edf2ff);border-color:#b9c8e5}
-body.theme-light .board-wrap{background:#e2eaf9;border-color:#b9c8e5}
-body.theme-light .modal{background:linear-gradient(160deg,#fff,#e7edfa);border-color:#b9c8e5}
-body.theme-light .modal p,body.theme-light label{color:#394966!important}
-body.theme-light .secondary{background:#d7e2f7;color:#17213a;border-color:#b9c8e5}
+/* Compact iPad landscape layout */
+body.layout-tablet {
+  align-items: flex-start;
+  padding: 4px;
+}
+
+body.layout-tablet .game {
+  width: 100%;
+  max-width: 1050px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  grid-template-areas:
+    "header header"
+    "stats stats"
+    "opponent board"
+    "controls title"
+    "controls pieces"
+    "help help";
+  gap: 4px;
+  align-items: start;
+}
+
+body.layout-tablet header {
+  grid-area: header;
+  margin: 0;
+}
+
+body.layout-tablet h1 {
+  font-size: 23px;
+}
+
+body.layout-tablet .subtitle {
+  font-size: 10px;
+  margin-top: 0;
+}
+
+body.layout-tablet .stats {
+  grid-area: stats;
+  margin: 2px 0;
+  gap: 4px;
+}
+
+body.layout-tablet .stat {
+  padding: 3px;
+  border-radius: 8px;
+}
+
+body.layout-tablet .stat span {
+  font-size: 9px;
+}
+
+body.layout-tablet .stat strong {
+  font-size: 16px;
+}
+
+body.layout-tablet .opponent-wrap {
+  grid-area: opponent;
+  margin: 0;
+  padding: 4px;
+}
+
+body.layout-tablet .opponent-head {
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+
+body.layout-tablet .opponent-board {
+  max-width: 130px;
+  gap: 1px;
+}
+
+body.layout-tablet .board-wrap {
+  grid-area: board;
+  width: 100%;
+  max-width: min(100%, 48vh);
+  justify-self: center;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+body.layout-tablet .board {
+  gap: 2px;
+}
+
+body.layout-tablet .cell {
+  border-radius: 3px;
+}
+
+body.layout-tablet .toast {
+  margin: 0;
+  height: 14px;
+  font-size: 10px;
+}
+
+body.layout-tablet .pieces-title {
+  grid-area: title;
+  margin: 0;
+  font-size: 11px;
+}
+
+body.layout-tablet .pieces {
+  grid-area: pieces;
+  gap: 4px;
+  margin: 0;
+}
+
+body.layout-tablet .piece {
+  min-height: 54px;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+body.layout-tablet .mini {
+  gap: 2px;
+}
+
+body.layout-tablet .mini-cell {
+  width: clamp(10px, 2vw, 17px);
+  height: clamp(10px, 2vw, 17px);
+  border-radius: 3px;
+}
+
+body.layout-tablet .controls {
+  grid-area: controls;
+  margin: 0;
+  gap: 4px;
+}
+
+body.layout-tablet .controls button {
+  padding: 7px 5px;
+  font-size: 11px;
+}
+
+body.layout-tablet .help {
+  grid-area: help;
+  margin: 0;
+  font-size: 10px;
+}
+
+body.layout-phone .game {
+  width: min(100%, 480px);
+}
+
+/* Compact horizontal layout when automatic device mode is active */
+@media (orientation: landscape) and (min-width: 700px) {
+  body.layout-auto {
+    align-items: flex-start;
+    padding: 4px;
+  }
+
+  body.layout-auto .game {
+    width: 100%;
+    max-width: 1050px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+    grid-template-areas:
+      "header header"
+      "stats stats"
+      "opponent board"
+      "controls title"
+      "controls pieces"
+      "help help";
+    gap: 4px;
+    align-items: start;
+  }
+
+  body.layout-auto header {
+    grid-area: header;
+    margin: 0;
+  }
+
+  body.layout-auto h1 {
+    font-size: 23px;
+  }
+
+  body.layout-auto .subtitle {
+    font-size: 10px;
+    margin-top: 0;
+  }
+
+  body.layout-auto .stats {
+    grid-area: stats;
+    margin: 2px 0;
+    gap: 4px;
+  }
+
+  body.layout-auto .stat {
+    padding: 3px;
+    border-radius: 8px;
+  }
+
+  body.layout-auto .stat span {
+    font-size: 9px;
+  }
+
+  body.layout-auto .stat strong {
+    font-size: 16px;
+  }
+
+  body.layout-auto .opponent-wrap {
+    grid-area: opponent;
+    margin: 0;
+    padding: 4px;
+  }
+
+  body.layout-auto .opponent-board {
+    max-width: 130px;
+    gap: 1px;
+  }
+
+  body.layout-auto .board-wrap {
+    grid-area: board;
+    width: 100%;
+    max-width: min(100%, 48vh);
+    justify-self: center;
+    padding: 4px;
+  }
+
+  body.layout-auto .board {
+    gap: 2px;
+  }
+
+  body.layout-auto .cell {
+    border-radius: 3px;
+  }
+
+  body.layout-auto .toast {
+    margin: 0;
+    height: 14px;
+    font-size: 10px;
+  }
+
+  body.layout-auto .pieces-title {
+    grid-area: title;
+    margin: 0;
+    font-size: 11px;
+  }
+
+  body.layout-auto .pieces {
+    grid-area: pieces;
+    gap: 4px;
+    margin: 0;
+  }
+
+  body.layout-auto .piece {
+    min-height: 54px;
+    padding: 3px;
+    border-radius: 8px;
+  }
+
+  body.layout-auto .mini-cell {
+    width: clamp(10px, 2vw, 17px);
+    height: clamp(10px, 2vw, 17px);
+  }
+
+  body.layout-auto .controls {
+    grid-area: controls;
+    margin: 0;
+    gap: 4px;
+  }
+
+  body.layout-auto .controls button {
+    padding: 7px 5px;
+    font-size: 11px;
+  }
+
+  body.layout-auto .help {
+    grid-area: help;
+    margin: 0;
+    font-size: 10px;
+  }
+  }
 </style>
 </head>
 <body>
