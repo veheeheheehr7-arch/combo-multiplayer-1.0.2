@@ -58,6 +58,18 @@ button{font:inherit;border:0;border-radius:12px;padding:12px 14px;font-weight:75
 .leaderboard h3{margin:0 0 8px;font-size:15px}
 .leader-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #283656;font-size:13px}
 .leader-row:last-child{border-bottom:0}
+.global-leaderboard-list{max-height:420px;overflow-y:auto;overscroll-behavior:contain;padding-right:3px}
+.global-leader-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:29px;padding:5px 4px;border-bottom:1px solid #283656;border-radius:5px;font-size:12px}
+.global-leader-row .rank{font-weight:900;text-align:center;color:#9fb0d4}
+.global-leader-row .player-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.global-leader-row .player-score{font-weight:800;white-space:nowrap}
+.global-leader-row.rank-1{background:#7b5b1538;color:#ffe08a}.global-leader-row.rank-1 .rank{color:#ffd54a}
+.global-leader-row.rank-2{background:#71809622;color:#e1e8f0}.global-leader-row.rank-2 .rank{color:#d5deeb}
+.global-leader-row.rank-3{background:#9b572b22;color:#f3bd91}.global-leader-row.rank-3 .rank{color:#e9a16b}
+.global-leader-row.rank-top10 .rank{color:#8ff4d0}
+.global-leader-row.rank-top50 .rank{color:#8db8ff}
+.global-leader-row.empty{opacity:.42}
+.global-leader-row.empty .player-score{color:#9fb0d4;font-weight:500}
 .hint{font-size:11px;color:#9fb0d4;margin-top:7px}
 .drag-ghost{position:fixed;z-index:99999;pointer-events:none;opacity:1;filter:drop-shadow(0 3px 2px #000e) drop-shadow(0 0 3px #ffffffd9);transform:translate3d(-50%,-50%,0);will-change:left,top;display:grid;gap:3px;outline:2px solid #ffffffb8;outline-offset:3px;border-radius:5px}
 .ghost-cell{width:clamp(22px,6.2vw,31px);height:clamp(22px,6.2vw,31px);border-radius:5px;box-shadow:inset 0 -2px 0 #0002}
@@ -96,7 +108,23 @@ button{font:inherit;border:0;border-radius:12px;padding:12px 14px;font-weight:75
 }
 
 
-body.theme-forest{--bg:#10251e;--panel:#1b3a2d;--cell:#285241;--text:#f0fff5;--muted:#b1d8bf;--accent:#8af0b0;background:radial-gradient(circle at top,#285a43,#10251e 65%)}
+/* Device layout: tablet landscape places the board and pieces side by side. */
+body.layout-tablet{align-items:flex-start;padding:10px;}
+body.layout-tablet .game{width:min(100%,1100px);display:grid;grid-template-columns:minmax(300px,1.05fr) minmax(280px,.95fr);grid-template-areas:"header header" "stats stats" "opponent board" "toast title" "controls pieces" "help help";gap:8px;align-items:start;}
+body.layout-tablet header{grid-area:header;margin-bottom:0}
+body.layout-tablet .stats{grid-area:stats;margin:4px 0}
+body.layout-tablet .opponent-wrap{grid-area:opponent;margin:0}
+body.layout-tablet .board-wrap{grid-area:board;width:100%;max-width:min(100%, min(66vh,620px));justify-self:center}
+body.layout-tablet .toast{grid-area:toast;margin:0}
+body.layout-tablet .pieces-title{grid-area:title;align-self:end;margin:0 0 4px}
+body.layout-tablet .pieces{grid-area:pieces;margin-top:28px;align-self:start}
+body.layout-tablet .controls{grid-area:controls;margin-top:0}
+body.layout-tablet .help{grid-area:help;margin:0}
+body.layout-tablet .piece{min-height:100px}
+body.layout-tablet .mini-cell{width:clamp(16px,2.5vw,26px);height:clamp(16px,2.5vw,26px)}
+body.layout-phone .game{width:min(100%,480px)}
+@media (orientation:landscape) and (min-width:700px){body.layout-auto{align-items:flex-start;padding:8px}body.layout-auto .game{width:min(100%,1000px);display:grid;grid-template-columns:minmax(300px,1.05fr) minmax(280px,.95fr);grid-template-areas:"header header" "stats stats" "opponent board" "toast title" "controls pieces" "help help";gap:7px;align-items:start}body.layout-auto header{grid-area:header;margin-bottom:0}body.layout-auto .stats{grid-area:stats;margin:4px 0}body.layout-auto .opponent-wrap{grid-area:opponent;margin:0}body.layout-auto .board-wrap{grid-area:board;width:100%;max-width:min(100%, min(66vh,600px));justify-self:center}body.layout-auto .toast{grid-area:toast;margin:0}body.layout-auto .pieces-title{grid-area:title;margin:0 0 4px}body.layout-auto .pieces{grid-area:pieces;margin-top:28px}body.layout-auto .controls{grid-area:controls;margin-top:0}body.layout-auto .help{grid-area:help;margin:0}body.layout-auto .piece{min-height:90px}}
+  body.theme-forest{--bg:#10251e;--panel:#1b3a2d;--cell:#285241;--text:#f0fff5;--muted:#b1d8bf;--accent:#8af0b0;background:radial-gradient(circle at top,#285a43,#10251e 65%)}
 body.theme-sunset{--bg:#2a1630;--panel:#45264b;--cell:#58324f;--text:#fff4f7;--muted:#e6bfd0;--accent:#ffb36b;background:radial-gradient(circle at top,#77405b,#24152c 70%)}
 body.theme-light{--bg:#e8efff;--panel:#fff;--cell:#d1dcf3;--text:#17213a;--muted:#52617d;--accent:#3975b6;background:radial-gradient(circle at top,#fff,#dce6fb 70%)}
 body.theme-light .stat,body.theme-light .piece{background:linear-gradient(180deg,#fff,#edf2ff);border-color:#b9c8e5}
@@ -150,6 +178,10 @@ body.theme-light .secondary{background:#d7e2f7;color:#17213a;border-color:#b9c8e
     <select id="languageSelect" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid #40527a;background:#111b31;color:#f4f7ff;font:inherit">
       <option value="uk">🇺🇦 Українська</option><option value="de">🇩🇪 Deutsch</option><option value="en">🇬🇧 English</option>
     </select>
+    <label for="deviceLayoutSelect" style="display:block;text-align:left;font-size:13px;color:#c5d1ed;margin-top:12px">Режим пристрою / Device layout</label>
+    <select id="deviceLayoutSelect" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid #40527a;background:#111b31;color:#f4f7ff;font:inherit">
+      <option value="auto">📱 Автоматично / Auto</option><option value="phone">📱 Телефон / Phone</option><option value="tablet">📲 Планшет / Tablet (горизонтально)</option>
+    </select>
     <label for="themeSelect" style="display:block;text-align:left;font-size:13px;color:#c5d1ed;margin-top:12px">Тема</label>
     <select id="themeSelect" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid #40527a;background:#111b31;color:#f4f7ff;font:inherit">
       <option value="night">🌌 Нічна</option><option value="forest">🌲 Лісова</option><option value="sunset">🌅 Захід сонця</option><option value="light">☀️ Світла</option>
@@ -169,7 +201,7 @@ body.theme-light .secondary{background:#d7e2f7;color:#17213a;border-color:#b9c8e
 <div class="panel-stat"><span>Загальний час гри</span><strong id="totalTime">0 хв</strong></div>
 </div>
 <div class="leaderboard"><h3>🏆 Мої рекорди</h3><div id="leaderRows"></div></div>
-<div class="leaderboard"><h3>🌍 Глобальний рейтинг</h3><div id="globalLeaderRows">Натисни, щоб завантажити онлайн-рейтинг.</div><button class="secondary" id="refreshGlobalBtn">🔄 Оновити глобальний рейтинг</button></div>
+<div class="leaderboard"><h3>🌍 Глобальний рейтинг</h3><div id="globalLeaderRows" class="global-leaderboard-list">Натисни, щоб завантажити онлайн-рейтинг.</div><button class="secondary" id="refreshGlobalBtn">🔄 Оновити глобальний рейтинг</button></div>
 <div class="hint">Рекорди зберігаються на цьому пристрої в браузері.</div>
 <button class="primary" id="statsBack">← Назад у меню</button>
 <button class="secondary" id="resetStats">Скинути статистику</button>
@@ -205,7 +237,8 @@ let data=Object.assign({games:0,best:0,maxCombo:0,totalSeconds:0,leaderboard:[]}
 const profile = {
   get name(){ return localStorage.getItem('bbPlayerName') || ''; },
   get language(){ return localStorage.getItem('bbLanguage') || 'uk'; },
-  get theme(){ return localStorage.getItem('bbTheme') || 'night'; }
+  get theme(){ return localStorage.getItem('bbTheme') || 'night'; },
+  get deviceLayout(){ return localStorage.getItem('bbDeviceLayout') || 'auto'; }
 };
 window.ComboGame = {
   getState: () => ({score, grid: grid.map(row => row.slice()), name: profile.name || 'Гравець'}),
@@ -231,7 +264,7 @@ function saveData(){try{localStorage.setItem('bbDeluxeStats',JSON.stringify(data
 function pulseDevice(lines, combo){try{if(navigator.vibrate){navigator.vibrate(combo>1?[45,35,65]:lines>1?[70,30,70]:35)}}catch(e){}}
 function showClearEffect(lines, combo){const wrap=document.querySelector('.board-wrap');wrap.classList.remove('fx');toastEl.classList.remove('fx');void wrap.offsetWidth;wrap.classList.add('fx');toastEl.classList.add('fx');pulseDevice(lines,combo);setTimeout(()=>{wrap.classList.remove('fx');toastEl.classList.remove('fx')},500)}
 function beep(freq=520,duration=.07){if(!sound)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;o.type='sine';g.gain.value=.04;o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.stop(audioCtx.currentTime+duration)}catch(e){}}
-function hideAll(){[mainMenu,statsMenu,rulesMenu,gameOver,document.getElementById('settingsMenu')].forEach(x=>x.classList.add('hidden'))}
+ function hideAll(){[mainMenu,statsMenu,rulesMenu,gameOver,document.getElementById('settingsMenu')].forEach(x=>x.classList.add('hidden'))}
 function showMenu(){running=false;endClock();hideAll();mainMenu.classList.remove('hidden');clearPreview();drag=null}
 function makeBoard(){boardEl.innerHTML='';for(let r=0;r<N;r++)for(let c=0;c<N;c++){let el=document.createElement('div');el.className='cell';el.dataset.r=r;el.dataset.c=c;el.addEventListener('click',()=>{if(!drag)placeAt(r,c)});boardEl.appendChild(el)}}
 function randomPiece(){let shape=shapes[Math.floor(Math.random()*shapes.length)].map(p=>p.slice()),h=Math.max(...shape.map(p=>p[0]))+1,w=Math.max(...shape.map(p=>p[1]))+1;return {shape,color:colors[Math.floor(Math.random()*colors.length)],h,w,used:false}}
@@ -320,28 +353,36 @@ document.getElementById('soundBtn').addEventListener('click',()=>{sound=!sound;d
 document.getElementById('resetStats').addEventListener('click',()=>{if(confirm('Точно скинути всю статистику та рекорди?')){data={games:0,best:0,maxCombo:0,totalSeconds:0,leaderboard:[]};saveData();renderStats();updateStats()}});
 const settingsMenu=document.getElementById('settingsMenu');
 function applyTheme(theme){document.body.classList.remove('theme-forest','theme-sunset','theme-light');if(theme!=='night')document.body.classList.add('theme-'+theme);}
-function applyLanguage(lang){
+  function applyLanguage(lang){
   const t={
-    uk:{subtitle:'DELUXE • комбо • рекорди',score:'Рахунок',best:'Рекорд',combo:'Комбо 🔥',play:'▶ СТАРТ',multi:'👥 Грати з другом онлайн',profile:'⚙️ Налаштування профілю',stats:'📊 Моя статистика',rules:'❔ Як грати',settings:'⚙️ Налаштування',save:'💾 Зберегти',back:'← Назад у меню'},
-    en:{subtitle:'DELUXE • combos • records',score:'Score',best:'Best',combo:'Combo 🔥',play:'▶ PLAY',multi:'👥 Play online with a friend',profile:'⚙️ Profile settings',stats:'📊 My statistics',rules:'❔ How to play',settings:'⚙️ Settings',save:'💾 Save',back:'← Back to menu'},
-    de:{subtitle:'DELUXE • Combos • Rekorde',score:'Punkte',best:'Rekord',combo:'Combo 🔥',play:'▶ START',multi:'👥 Online mit Freunden spielen',profile:'⚙️ Profileinstellungen',stats:'📊 Meine Statistik',rules:'❔ Spielregeln',settings:'⚙️ Einstellungen',save:'💾 Speichern',back:'← Zurück zum Menü'}
+    uk:{subtitle:'DELUXE • комбо • рекорди',score:'Рахунок',best:'Рекорд',combo:'Комбо 🔥',play:'▶ СТАРТ',multi:'👥 Грати з другом онлайн',profile:'⚙️ Налаштування профілю',stats:'📊 Моя статистика',rules:'❔ Як грати',settings:'⚙️ Налаштування',save:'💾 Зберегти',back:'← Назад у меню',name:'Ім’я гравця',namePlaceholder:'Введи ім’я',language:'Мова / Language / Sprache',theme:'Тема',device:'Режим пристрою / Device layout',auto:'📱 Автоматично / Auto',phone:'📱 Телефон / Phone',tablet:'📲 Планшет / Tablet (горизонтально)',night:'🌌 Нічна',forest:'🌲 Лісова',sunset:'🌅 Захід сонця',light:'☀️ Світла',statTitle:'📊 Твоя статистика',played:'Зіграно ігор',bestScore:'Найкращий рахунок',maxCombo:'Максимальне комбо',totalTime:'Загальний час гри',records:'🏆 Мої рекорди',global:'🌍 Глобальний рейтинг',refresh:'🔄 Оновити глобальний рейтинг',localHint:'Рекорди зберігаються на цьому пристрої в браузері.',reset:'Скинути статистику',rulesTitle:'❔ Як грати',rulesText:'1. Натисни «Старт».<br>2. Перетягни фігуру на поле.<br>3. Біла тінь покаже місце, де вона стане. Якщо місце підсвічене червоним — там не можна поставити фігуру.<br>4. Заповнюй рядки або стовпці, щоб очистити їх. Очищення ліній поспіль збільшує комбо!',rulesBack:'Зрозуміло',gameOver:'🏁 Гру завершено!',again:'↻ Грати ще раз',menu:'☰ Головне меню',pieces:'Перетягни фігуру на поле або натисни її, а потім клітинку',help:'Заповнюй цілі рядки та стовпці. Біла тінь показує, куди стане фігура.',soundOn:'🔊 Звук: ВКЛ',soundOff:'🔊 Звук: ВИКЛ',myGame:'🟢 Твоя гра',friendGame:'👤 Гра друга'},
+    en:{subtitle:'DELUXE • combos • records',score:'Score',best:'Best',combo:'Combo 🔥',play:'▶ PLAY',multi:'👥 Play online with a friend',profile:'⚙️ Profile settings',stats:'📊 My statistics',rules:'❔ How to play',settings:'⚙️ Settings',save:'💾 Save',back:'← Back to menu',name:'Player name',namePlaceholder:'Enter your name',language:'Language',theme:'Theme',device:'Device layout',auto:'📱 Automatic',phone:'📱 Phone',tablet:'📲 Tablet (landscape)',night:'🌌 Night',forest:'🌲 Forest',sunset:'🌅 Sunset',light:'☀️ Light',statTitle:'📊 Your statistics',played:'Games played',bestScore:'Best score',maxCombo:'Best combo',totalTime:'Total play time',records:'🏆 My records',global:'🌍 Global leaderboard',refresh:'🔄 Refresh global leaderboard',localHint:'Records are saved in this browser on this device.',reset:'Reset statistics',rulesTitle:'❔ How to play',rulesText:'1. Press “Play”.<br>2. Drag a piece onto the board.<br>3. The white shadow shows where it will land. Red means the piece cannot be placed there.<br>4. Fill rows or columns to clear them. Clearing lines consecutively increases your combo!',rulesBack:'Got it',gameOver:'🏁 Game over!',again:'↻ Play again',menu:'☰ Main menu',pieces:'Drag a piece onto the board, or tap it and then tap a cell',help:'Fill complete rows and columns. The white shadow shows where the piece will land.',soundOn:'🔊 Sound: ON',soundOff:'🔊 Sound: OFF',myGame:'🟢 Your board',friendGame:'👤 Friend’s board'},
+    de:{subtitle:'DELUXE • Combos • Rekorde',score:'Punkte',best:'Rekord',combo:'Combo 🔥',play:'▶ START',multi:'👥 Online mit Freunden spielen',profile:'⚙️ Profileinstellungen',stats:'📊 Meine Statistik',rules:'❔ Spielregeln',settings:'⚙️ Einstellungen',save:'💾 Speichern',back:'← Zurück zum Menü',name:'Spielername',namePlaceholder:'Namen eingeben',language:'Sprache',theme:'Design',device:'Geräteansicht',auto:'📱 Automatisch',phone:'📱 Telefon',tablet:'📲 Tablet (Querformat)',night:'🌌 Nacht',forest:'🌲 Wald',sunset:'🌅 Sonnenuntergang',light:'☀️ Hell',statTitle:'📊 Deine Statistik',played:'Gespielte Spiele',bestScore:'Bester Punktestand',maxCombo:'Höchste Combo',totalTime:'Gesamte Spielzeit',records:'🏆 Meine Rekorde',global:'🌍 Globale Rangliste',refresh:'🔄 Rangliste aktualisieren',localHint:'Rekorde werden in diesem Browser auf diesem Gerät gespeichert.',reset:'Statistik zurücksetzen',rulesTitle:'❔ Spielregeln',rulesText:'1. Drücke „Start“.<br>2. Ziehe einen Block auf das Spielfeld.<br>3. Der weiße Schatten zeigt die Position. Rot bedeutet, dass der Block dort nicht platziert werden kann.<br>4. Fülle Reihen oder Spalten, um sie zu löschen. Aufeinanderfolgende Linien erhöhen die Combo!',rulesBack:'Verstanden',gameOver:'🏁 Spiel beendet!',again:'↻ Nochmal spielen',menu:'☰ Hauptmenü',pieces:'Ziehe einen Block auf das Feld oder tippe ihn und danach eine Zelle an',help:'Fülle ganze Reihen und Spalten. Der weiße Schatten zeigt die Position des Blocks.',soundOn:'🔊 Ton: AN',soundOff:'🔊 Ton: AUS',myGame:'🟢 Dein Spielfeld',friendGame:'👤 Spielfeld des Freundes'}
   }[lang]||{};
-  document.querySelector('header .subtitle').textContent=t.subtitle;
-  document.querySelectorAll('.stat span')[0].textContent=t.score;document.querySelectorAll('.stat span')[1].textContent=t.best;document.querySelectorAll('.stat span')[2].textContent=t.combo;
-  document.getElementById('playBtn').textContent=t.play;document.getElementById('multiplayerBtn').textContent=t.multi;document.getElementById('profileBtn').textContent=t.profile;document.getElementById('statsBtn').textContent=t.stats;document.getElementById('menuRulesBtn').textContent=t.rules;
-  document.querySelector('#settingsMenu h2').textContent=t.settings;document.getElementById('saveSettingsBtn').textContent=t.save;document.getElementById('settingsBackBtn').textContent=t.back;
+  const set=(sel,val)=>{const el=document.querySelector(sel);if(el&&val!==undefined)el.textContent=val};
+  set('header .subtitle',t.subtitle);document.querySelectorAll('.stat span').forEach((el,i)=>el.textContent=[t.score,t.best,t.combo][i]||el.textContent);
+  [['playBtn','play'],['multiplayerBtn','multi'],['profileBtn','profile'],['statsBtn','stats'],['menuRulesBtn','rules'],['saveSettingsBtn','save'],['settingsBackBtn','back'],['statsBack','back'],['rulesBack','rulesBack'],['againBtn','again'],['overMenuBtn','menu'],['menuBtn','menu'],['resetStats','reset'],['refreshGlobalBtn','refresh']].forEach(([id,k])=>{const el=document.getElementById(id);if(el&&t[k])el.textContent=t[k]});
+  set('#settingsMenu h2',t.settings);set('#settingsMenu label[for="playerNameInput"]',t.name);set('#settingsMenu label[for="languageSelect"]',t.language);set('#settingsMenu label[for="themeSelect"]',t.theme);set('#settingsMenu label[for="deviceLayoutSelect"]',t.device);
+  const nameInput=document.getElementById('playerNameInput');if(nameInput)nameInput.placeholder=t.namePlaceholder;
+  const layout=document.getElementById('deviceLayoutSelect');if(layout){layout.options[0].textContent=t.auto;layout.options[1].textContent=t.phone;layout.options[2].textContent=t.tablet}
+  const theme=document.getElementById('themeSelect');if(theme){[t.night,t.forest,t.sunset,t.light].forEach((v,i)=>{if(v)theme.options[i].textContent=v})}
+  set('#statsMenu h2',t.statTitle);document.querySelectorAll('.panel-stat span').forEach((el,i)=>el.textContent=[t.played,t.bestScore,t.maxCombo,t.totalTime][i]||el.textContent);
+  set('#statsMenu .leaderboard h3',t.records);const heads=document.querySelectorAll('#statsMenu .leaderboard h3');if(heads[1]&&t.global)heads[1].textContent=t.global;
+  set('#statsMenu .hint',t.localHint);set('#rulesMenu h2',t.rulesTitle);const rp=document.querySelector('#rulesMenu p');if(rp)rp.innerHTML=t.rulesText;set('#gameOver h2',t.gameOver);set('.pieces-title',t.pieces);set('.help',t.help);set('.board-wrap .opponent-head strong',t.myGame);set('#opponentWrap .opponent-head strong',t.friendGame);
+  const soundBtn=document.getElementById('soundBtn');if(soundBtn)soundBtn.textContent=sound?(t.soundOn||'🔊 Sound: ON'):(t.soundOff||'🔊 Sound: OFF');
 }
-document.getElementById('profileBtn').addEventListener('click',()=>{document.getElementById('playerNameInput').value=localStorage.getItem('bbPlayerName')||'';document.getElementById('languageSelect').value=localStorage.getItem('bbLanguage')||'uk';document.getElementById('themeSelect').value=localStorage.getItem('bbTheme')||'night';hideAll();settingsMenu.classList.remove('hidden')});
+function applyDeviceLayout(mode){document.body.classList.remove('layout-auto','layout-phone','layout-tablet');document.body.classList.add('layout-'+(['auto','phone','tablet'].includes(mode)?mode:'auto'));}
+document.getElementById('profileBtn').addEventListener('click',()=>{document.getElementById('playerNameInput').value=localStorage.getItem('bbPlayerName')||'';document.getElementById('languageSelect').value=localStorage.getItem('bbLanguage')||'uk';document.getElementById('themeSelect').value=localStorage.getItem('bbTheme')||'night';document.getElementById('deviceLayoutSelect').value=localStorage.getItem('bbDeviceLayout')||'auto';hideAll();settingsMenu.classList.remove('hidden')});
 document.getElementById('saveSettingsBtn').addEventListener('click',()=>{
   const name=document.getElementById('playerNameInput').value.trim().slice(0,20);
   if(!name){alert('Введи ім’я гравця.');return;}
-  const lang=document.getElementById('languageSelect').value,theme=document.getElementById('themeSelect').value;
-  localStorage.setItem('bbPlayerName',name);localStorage.setItem('bbLanguage',lang);localStorage.setItem('bbTheme',theme);
-  applyTheme(theme);applyLanguage(lang);hideAll();mainMenu.classList.remove('hidden');
+  const lang=document.getElementById('languageSelect').value,theme=document.getElementById('themeSelect').value,deviceLayout=document.getElementById('deviceLayoutSelect').value;
+  localStorage.setItem('bbPlayerName',name);localStorage.setItem('bbLanguage',lang);localStorage.setItem('bbTheme',theme);localStorage.setItem('bbDeviceLayout',deviceLayout);
+  applyTheme(theme);applyDeviceLayout(deviceLayout);applyLanguage(lang);hideAll();mainMenu.classList.remove('hidden');
   window.dispatchEvent(new CustomEvent('combo-profile-updated',{detail:{name,language:lang,theme}}));
 });
 document.getElementById('settingsBackBtn').addEventListener('click',()=>{hideAll();mainMenu.classList.remove('hidden')});
-applyTheme(profile.theme);applyLanguage(profile.language);
+applyTheme(profile.theme);applyDeviceLayout(profile.deviceLayout);applyLanguage(profile.language);
 if(!profile.name){setTimeout(()=>{document.getElementById('playerNameInput').value='';hideAll();settingsMenu.classList.remove('hidden')},100);}
 
 })();
@@ -389,7 +430,7 @@ if(!profile.name){setTimeout(()=>{document.getElementById('playerNameInput').val
   const codeInput = $('roomCodeInput');
   const createBtn = $('createRoomBtn');
   const joinBtn = $('joinRoomBtn');
-  const shareBtn = $('shareRoomBtn');
+    const shareBtn = $('shareRoomBtn');
   const playersEl = $('roomPlayers');
   const onlineBar = $('onlineBar');
   let db = null, uid = null, roomCode = null, roomRef = null, scoreTimer = null;
@@ -557,16 +598,20 @@ if (scoreTimer) clearInterval(scoreTimer);
     target.textContent='Завантаження рейтингу…';
     try{
       if(!await initFirebase()){target.textContent='Онлайн-рейтинг недоступний. Перевір підключення Firebase.';return;}
-      const snap=await db.ref('globalLeaderboard').orderByChild('score').limitToLast(100).once('value');
-      const entries=Object.values(snap.val()||{}).sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0));
+      const snap=await db.ref('globalLeaderboard').orderByChild('score').limitToLast(200).once('value');
+      const entries=Object.values(snap.val()||{}).sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0)).slice(0,200);
       target.replaceChildren();
-      if(!entries.length){target.textContent='Поки немає онлайн-рекордів.';return;}
-      entries.forEach((entry,i)=>{
-        const row=document.createElement('div');row.className='leader-row';
-        const left=document.createElement('span');left.textContent=(i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'')+(entry.name||'Гравець');
-        const right=document.createElement('b');right.textContent=(Number(entry.score)||0)+' оч.';
-        row.append(left,right);target.appendChild(row);
-      });
+      for(let i=0;i<200;i++){
+        const entry=entries[i];
+        const rank=i+1;
+        const row=document.createElement('div');
+        row.className='global-leader-row'+(rank===1?' rank-1':rank===2?' rank-2':rank===3?' rank-3':rank<=10?' rank-top10':rank<=50?' rank-top50':'')+(!entry?' empty':'');
+        const rankEl=document.createElement('span');rankEl.className='rank';
+        rankEl.textContent=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':String(rank);
+        const nameEl=document.createElement('span');nameEl.className='player-name';nameEl.textContent=entry?(entry.name||'Гравець'):'— вільне місце —';
+        const scoreEl=document.createElement('span');scoreEl.className='player-score';scoreEl.textContent=entry?((Number(entry.score)||0)+' оч.'):'—';
+        row.append(rankEl,nameEl,scoreEl);target.appendChild(row);
+      }
     }catch(err){target.textContent='Не вдалося завантажити рейтинг. Перевір правила Firebase.';}
   });
   $('refreshGlobalBtn').addEventListener('click',()=>window.dispatchEvent(new Event('combo-show-global-leaderboard')));
